@@ -1,6 +1,14 @@
 /// <reference types= "cypress"/>
 
 describe('Teste de API em Produtos', () => {
+    
+    let token
+    beforeEach(() => {
+        cy.token('fulano@qa.com', 'teste').then(tkn => {
+            token = tkn
+        })
+    });
+    
     it('Listar produtos - GET', () => {
         cy.request({
             method: 'GET',
@@ -11,22 +19,21 @@ describe('Teste de API em Produtos', () => {
         })        
     });
 
-    it.only('Cadastrar produto - POST', () => {
-        let token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZ1bGFub0BxYS5jb20iLCJwYXNzd29yZCI6InRlc3RlIiwiaWF0IjoxNzQ3MDcxNzI4LCJleHAiOjE3NDcwNzIzMjh9.4ryImwVNq2up_QkX2qaP1QzycwQyW-CDg3sIP_0fH1g"
-        cy.request({
-            method: 'POST',
-            url: 'produtos',
-            headers: {authorization: token},
-            body: {
-                "nome": "Cabo USB 002",
-                "preco": 15,
-                "descricao": "Caso USB do tipo C",
-                "quantidade": 100
-              }
-        }).should((response) => {
-            expect(response.status).equal(201)
-            expect(response.body.message).equal('Cadastro realizado com sucesso')
+    it('Cadastrar produto com sucesso - POST', () => {
+       let produto = 'Produto EBAC ' + Math.floor(Math.random() * 1000000000)
+       cy.cadastrarProduto(token, produto, 10, 'Cabo USB C', 100)
+       .should((response) => {
+           expect(response.status).equal(201)
+           expect(response.body.message).equal('Cadastro realizado com sucesso')
         })
-
     });
-})
+
+    it('Deve validar mensagem de produto cadastrado anteriormente', () => {
+        cy.cadastrarProduto(token, 'Cabo USB 001', 10, 'Cabo USB C', 100)
+        .should((response) => {
+            expect(response.status).equal(400)
+            expect(response.body.message).equal('Já existe produto com esse nome')
+        })
+    });
+
+});
